@@ -1,0 +1,15 @@
+# Config dùng chung - các file vae/dcgan/ddpm.yaml kế thừa bằng `_base_: base.yaml`
+seed: 42
+
+data:
+  name: fashion_mnist        # fashion_mnist | celeba | custom
+  image_size: 32             # fashion_mnist: 32 | celeba/custom: 64
+  batch_size: 128
+  num_workers: 2
+  subset_size: null          # vd 2000 để debug nhanh trên CPU
+  custom_subdir: ""          # chỉ dùng khi name = custom, vd "tranh_dan_gian"
+  label_attr: null           # celeba: vd "Smiling" để làm conditional
+
+output:
+  checkpoint_dir: checkpoints
+  sample_dir: outputs/samples

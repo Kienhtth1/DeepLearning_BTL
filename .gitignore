@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Dữ liệu & kết quả lớn - KHÔNG commit
+data/raw/*
+data/processed/*
+data/custom/*
+!data/**/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+outputs/*
+!outputs/.gitkeep
+!outputs/data_samples/
+wandb/
+runs/
+*.pth
+*.pt
+*.ckpt
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store

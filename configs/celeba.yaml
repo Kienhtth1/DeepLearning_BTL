@@ -1,0 +1,6 @@
+# Ghép thêm khi chạy CelebA: python main.py data --config configs/celeba.yaml
+_base_: base.yaml
+data:
+  name: celeba
+  image_size: 64
+  batch_size: 64

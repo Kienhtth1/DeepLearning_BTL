@@ -1,0 +1,9 @@
+_base_: base.yaml
+model:
+  name: vae
+  latent_dim: 128
+  hidden_dims: [32, 64, 128]
+  beta: 1.0
+train:
+  epochs: 30
+  lr: 1.0e-3
