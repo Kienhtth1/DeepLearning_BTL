@@ -2,8 +2,14 @@ _base_: base.yaml
 model:
   name: vae
   latent_dim: 128
-  hidden_dims: [32, 64, 128]
-  beta: 1.0
+  hidden_dims: [32, 64, 128]   # 32x32 -> 4x4 ; CelebA 64x64 nên dùng [32, 64, 128, 256]
+  beta: 1.0                    # >1: beta-VAE (latent gọn hơn, ảnh mờ hơn)
+  conditional: false           # true = CVAE theo nhãn lớp (phần mở rộng Phase 3)
 train:
   epochs: 30
   lr: 1.0e-3
+  weight_decay: 0.0
+  kl_warmup_epochs: 5          # beta tăng dần 0 -> beta trong 5 epoch đầu
+  grad_clip: 0.0
+  sample_every: 5
+  n_preview: 64

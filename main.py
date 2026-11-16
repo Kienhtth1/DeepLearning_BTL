@@ -1,6 +1,8 @@
 """Điểm chạy chung của dự án.
 
     python main.py data     [--config configs/base.yaml] [--set key=value ...]   # Phase 1 ✔
+    python main.py train    --config configs/vae.yaml                            # Phase 2 ✔ (TV1)
+    python main.py sample   --config configs/vae.yaml --ckpt checkpoints/vae_best.pth   # Phase 2 ✔ (TV1)
     python main.py train    --config configs/ddpm.yaml                           # Phase 2 ✔ (TV3)
     python main.py sample   --config configs/ddpm.yaml --ckpt checkpoints/ddpm_best.pth  # Phase 2 ✔ (TV3)
     python main.py evaluate                                                      # Phase 4
@@ -42,6 +44,9 @@ def main(argv: list[str] | None = None) -> None:
         if model_name == "ddpm":
             from src.training.train_ddpm import train_ddpm
             train_ddpm(cfg)
+        elif model_name == "vae":
+            from src.training.train_vae import train_vae
+            train_vae(cfg)
         else:
             sys.exit(f"Huấn luyện cho mô hình '{model_name}' chưa được triển khai (thuộc TV1/TV2).")
 
@@ -49,6 +54,8 @@ def main(argv: list[str] | None = None) -> None:
         model_name = cfg.get("model", {}).get("name", "ddpm").lower()
         if model_name == "ddpm":
             _run_ddpm_sample(cfg, ckpt_path=args.ckpt, n_samples=args.n_samples)
+        elif model_name == "vae":
+            _run_vae_sample(cfg, ckpt_path=args.ckpt, n_samples=args.n_samples)
         else:
             sys.exit(f"Sinh ảnh cho mô hình '{model_name}' chưa được triển khai (thuộc TV1/TV2).")
 
@@ -119,6 +126,36 @@ def _run_ddpm_sample(cfg: dict, ckpt_path: str | None = None, n_samples: int = 1
     nrow = int(math.isqrt(n_samples)) or 4
     save_image_grid(samples, sample_out_path, nrow=nrow)
     print(f"[DDPM Sample] Đã lưu lưới ảnh sinh thành công: {sample_out_path}")
+
+
+def _run_vae_sample(cfg: dict, ckpt_path: str | None = None, n_samples: int = 16) -> None:
+    """Sinh ảnh từ VAE đã huấn luyện + ảnh nội suy giữa 2 ảnh val."""
+    from src.data import get_dataloader_from_config
+    from src.training.train_vae import load_vae
+
+    set_seed(cfg.get("seed", 42))
+    device = get_device()
+    ckpt_file = Path(ckpt_path or Path(cfg.get("output", {}).get("checkpoint_dir", "checkpoints")) / "vae_best.pth")
+    if not ckpt_file.exists():
+        sys.exit(f"Lỗi: Không tìm thấy checkpoint tại {ckpt_file}")
+    model, ckpt = load_vae(ckpt_file, device)
+    print(f"[VAE Sample] Nạp {ckpt_file} (epoch {ckpt['epoch']}, val loss {ckpt['val_loss']:.2f})")
+
+    out_dir = Path(cfg.get("output", {}).get("sample_dir", "outputs/samples"))
+    nrow = int(math.isqrt(n_samples)) or 4
+    save_image_grid(model.sample(n_samples, device=device), out_dir / "vae_sampled.png", nrow=nrow)
+    print(f"[VAE Sample] Đã lưu {out_dir / 'vae_sampled.png'}")
+
+    # Nội suy trong không gian ẩn: mỗi hàng là 1 cặp ảnh val
+    loader, _ = get_dataloader_from_config(cfg, split="val")
+    x, y = next(iter(loader))
+    x = x.to(device)
+    rows = []
+    for i in range(0, min(8, x.size(0) - 1), 2):
+        yi = y[i].to(device) if model.conditional else None
+        rows.append(model.interpolate(x[i], x[i + 1], steps=10, y=yi))
+    save_image_grid(torch.cat(rows), out_dir / "vae_interpolation.png", nrow=10)
+    print(f"[VAE Sample] Đã lưu {out_dir / 'vae_interpolation.png'}")
 
 
 if __name__ == "__main__":
