@@ -2,9 +2,15 @@ _base_: base.yaml
 model:
   name: dcgan
   latent_dim: 100
-  g_features: 64
-  d_features: 64
+  ngf: 64
+  ndf: 64
+  label_smoothing: 0.0
 train:
   epochs: 30
   lr: 2.0e-4
-  betas: [0.5, 0.999]
+  beta1: 0.5
+  beta2: 0.999
+  d_steps: 1
+  g_steps: 1
+  sample_every: 5
+  n_preview: 16
