@@ -130,6 +130,30 @@ def plot_loss_curve(history: list[dict], save_path: Path) -> None:
     plt.close()
 
 
+def save_training_artifacts(
+    history: list[dict[str, Any]],
+    outputs_dir: Path,
+    epochs: int,
+    best_val_loss: float,
+    total_time: float,
+    status: str,
+) -> None:
+    """Persist loss curve and JSON history after each completed epoch."""
+    outputs_dir.mkdir(parents=True, exist_ok=True)
+    plot_loss_curve(history, outputs_dir / "ddpm_loss_curve.png")
+    payload = {
+        "model": "ddpm",
+        "epochs": epochs,
+        "completed_epochs": len(history),
+        "status": status,
+        "best_val_loss": best_val_loss,
+        "total_time_sec": round(total_time, 2),
+        "history": history,
+    }
+    with open(outputs_dir / "ddpm_train_log.json", "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
+
 def train_ddpm(
     cfg: dict,
     device: torch.device | str | None = None,
@@ -296,6 +320,17 @@ def train_ddpm(
             torch.save(ckpt_payload, ckpt_dir / "ddpm_best.pth")
             print(f"  -> Đã cập nhật checkpoint tốt nhất: {ckpt_dir / 'ddpm_best.pth'} (Val Loss: {val_loss:.4f})")
 
+        # Cập nhật loss curve và log ngay sau mỗi epoch đã hoàn thành.
+        # Nhờ vậy có thể theo dõi tiến độ và vẫn giữ lịch sử nếu training bị gián đoạn.
+        save_training_artifacts(
+            history=history,
+            outputs_dir=outputs_dir,
+            epochs=epochs,
+            best_val_loss=best_val_loss,
+            total_time=time.time() - total_start_time,
+            status="running",
+        )
+
         # Sinh ảnh xem trước định kỳ hoặc ở epoch cuối
         if (epoch % sample_every == 0 or epoch == epochs) and n_preview > 0:
             preview_path = samples_dir / f"sample_epoch_{epoch:03d}.png"
@@ -308,27 +343,17 @@ def train_ddpm(
     total_time = time.time() - total_start_time
     print(f"[DDPM Train] Hoàn thành huấn luyện trong {total_time:.1f}s. Best Val Loss: {best_val_loss:.4f}")
 
-    # Vẽ biểu đồ loss
-    loss_curve_path = outputs_dir / "ddpm_loss_curve.png"
-    plot_loss_curve(history, loss_curve_path)
-    print(f"[DDPM Train] Đã lưu biểu đồ loss: {loss_curve_path}")
-
-    # Lưu log lịch sử huấn luyện
-    log_path = outputs_dir / "ddpm_train_log.json"
-    with open(log_path, "w", encoding="utf-8") as f:
-        json.dump(
-            {
-                "model": "ddpm",
-                "epochs": epochs,
-                "best_val_loss": best_val_loss,
-                "total_time_sec": total_time,
-                "history": history,
-            },
-            f,
-            indent=2,
-            ensure_ascii=False,
-        )
-    print(f"[DDPM Train] Đã lưu log huấn luyện: {log_path}")
+    # Lưu trạng thái cuối cùng (completed) sau khi toàn bộ epochs kết thúc.
+    save_training_artifacts(
+        history=history,
+        outputs_dir=outputs_dir,
+        epochs=epochs,
+        best_val_loss=best_val_loss,
+        total_time=total_time,
+        status="completed",
+    )
+    print(f"[DDPM Train] Đã lưu biểu đồ loss: {outputs_dir / 'ddpm_loss_curve.png'}")
+    print(f"[DDPM Train] Đã lưu log huấn luyện: {outputs_dir / 'ddpm_train_log.json'}")
 
     return {
         "best_val_loss": best_val_loss,
