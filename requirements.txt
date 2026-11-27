@@ -11,7 +11,7 @@ pytest
 # Phase 3-4 (đánh giá) - bỏ comment khi tới phase này
 # torchmetrics[image]>=1.3    # FID, KID
 # torch-fidelity
-# lpips                       # đo độ đa dạng
+lpips                       # đo độ đa dạng
 
 # Phần mở rộng LoRA Stable Diffusion
 # diffusers
