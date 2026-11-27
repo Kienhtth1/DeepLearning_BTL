@@ -15,13 +15,16 @@ from src.models.base import GenerativeModel
 
 
 def weights_init_dcgan(module: nn.Module) -> None:
-    """Khởi tạo trọng số theo bài báo DCGAN (Radford et al., 2015)."""
-    classname = module.__class__.__name__
-    if classname.find("Conv") != -1:
-        nn.init.normal_(module.weight.data, 0.0, 0.02)
-    elif classname.find("BatchNorm") != -1:
-        nn.init.normal_(module.weight.data, 1.0, 0.02)
-        nn.init.constant_(module.bias.data, 0.0)
+    """Khởi tạo trọng số chuẩn DCGAN (Radford et al., 2015) an toàn theo kiểu lớp."""
+    if isinstance(module, (nn.Conv2d, nn.ConvTranspose2d)):
+        nn.init.normal_(module.weight, mean=0.0, std=0.02)
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0.0)
+    elif isinstance(module, (nn.BatchNorm1d, nn.BatchNorm2d)):
+        if module.weight is not None:
+            nn.init.normal_(module.weight, mean=1.0, std=0.02)
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0.0)
 
 
 class DCGANGenerator(nn.Module):

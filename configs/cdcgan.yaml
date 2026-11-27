@@ -1,0 +1,21 @@
+_base_: base.yaml
+
+model:
+  name: cdcgan
+  latent_dim: 100
+  embed_dim: 32
+  ngf: 64
+  ndf: 32
+  label_smoothing: 0.1
+
+train:
+  epochs: 30
+  lr: 2.0e-4
+  lr_g: 2.0e-4
+  lr_d: 1.0e-4
+  beta1: 0.5
+  beta2: 0.999
+  d_steps: 1
+  g_steps: 1
+  sample_every: 5
+  samples_per_class: 10
