@@ -1,0 +1,48 @@
+_base_: base.yaml
+
+seed: 42
+
+data:
+  name: custom
+  custom_subdir: tranh_dan_gian
+  resolution: 512
+  center_crop: true
+  random_flip: true
+
+model:
+  name: lora_sd
+  pretrained_model: "stable-diffusion-v1-5/stable-diffusion-v1-5"
+
+lora:
+  rank: 8
+  alpha: 8
+  dropout: 0.05
+  target_modules: ["to_q", "to_k", "to_v", "to_out.0"]
+
+train:
+  mixed_precision: "fp16"
+  gradient_checkpointing: true
+  batch_size: 1
+  gradient_accumulation_steps: 4
+  lr: 1.0e-4
+  weight_decay: 1.0e-2
+  max_grad_norm: 1.0
+  lr_scheduler: "cosine"
+  warmup_steps: 40
+  max_train_steps: 400
+  log_every: 20
+  save_every: 200
+  seed: 42
+
+prompt:
+  base_prompt: "dongho style, traditional Vietnamese Dong Ho folk woodblock painting, bold black outlines, flat natural mineral colors, do paper texture"
+  negative_prompt: "photorealistic, 3d render, blurry, modern photo, watermark, text, low quality"
+  eval_prompts:
+    - "dongho style, a rooster and hens in a village yard, traditional Vietnamese folk woodblock painting"
+    - "dongho style, a fat cat sitting near lotus flowers, traditional Vietnamese folk woodblock painting"
+    - "dongho style, a peaceful Vietnamese countryside festival with children playing, traditional Vietnamese folk woodblock painting"
+    - "dongho style, a buffalo boy playing flute under a bamboo tree, traditional Vietnamese folk woodblock painting"
+
+inference:
+  num_inference_steps: 30
+  guidance_scale: 7.5
